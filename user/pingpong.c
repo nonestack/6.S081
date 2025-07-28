@@ -5,40 +5,36 @@
 int
 main(int argc, char *argv[])
 {
-  int p[2];
+  int p1[2];  // p -> c
+  int p2[2];  // c -> p
 
-  pipe(p);
-  char b = 12;
+  pipe(p1);
+  pipe(p2);
+
 
 
   if (fork() > 0) { // parent process
-    int ret = write(p[1], (void *)&b, 1);
-    fprintf(1, "parent write ret = %d\n", ret);
-    if (ret != 1) {
-      fprintf(2, "parent process write error\n");
-    }
-    ret = read(p[0], &b, 1);
-    fprintf(1, "parent read ret = %d\n", ret);
-    if (ret != 1) {
-      fprintf(2, "parent process read error\n");
-    }
+    char b = 12;
+    close(p1[0]);
+    close(p2[1]);
+    
+    write(p1[1], "h", 1);
+    
+    read(p2[0], &b, 1);
     fprintf(1, "%d:received pong\n", getpid());
+    
     wait(0);
   }
   else { // child process
-    int ret = read(p[0], &b, 1);
-    fprintf(1, "child read ret = %d\n", ret);
-    if (ret != 1) {
-      fprintf(2, "child process read error\n");
-    }
-
+    char b = 12;
+    close(p1[1]);
+    close(p2[0]);
+    
+    read(p1[0], &b, 1);
     fprintf(1, "%d:received ping\n", getpid());
 
-    ret = write(p[1], (void *)&b, 1);
-    fprintf(1, "child write ret = %d\n", ret);
-    if (ret != 1) {
-      fprintf(2, "child process write error\n");
-    }
+    write(p2[1], "w", 1);
+
     exit(0);
   }
   exit(0);
