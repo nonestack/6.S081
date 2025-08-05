@@ -3,37 +3,78 @@
 #include "user/user.h"
 #include "kernel/fs.h"
 
-void find(char *path, char *filename)
+void
+getname(char *path, char *fname)
 {
-  int pd;
-  struct stat st;
+  char *p = path + strlen(path);  // *p == 0
+  --p;
 
-  if ((pd = open(path, 0)) < 0) {
+  while (*p == '/') {
+    *p = 0;
+    --p;
+  }
+
+  while (p >= path && *p != '/') --p; // *p == '/'
+  ++p;
+  memmove(fname, p, strlen(p));
+}
+
+void
+find(char *path, char *filename)
+{  
+  int fd;
+  struct stat st;
+  struct dirent de;
+
+  if ((fd = open(path, 0)) < 0) {
     fprintf(2, "find: cannot open %s\n", path);
     return;
   }
 
-  if (fstat(pd, &st) < 0) {
+  if (fstat(fd, &st) < 0) {
     fprintf(2, "find: cannot stat %s\n", path);
     return;
   }
 
+  char fn[512];
+  getname(path, fn);
+  if (strcmp(fn, filename) == 0) {
+    fprintf(1, "%s\n", path);
+  }
+
   if (st.type == T_FILE) {
-    fprintf(2, "find: %s is not path\n", path);
     return;
   }
 
-    
+  if (st.type == T_DIR) {
+    while (read(fd, &de, sizeof(de)) == sizeof(de)) {
+      if (de.inum == 0)
+        continue;
+
+      if (strcmp(de.name, ".") == 0 || strcmp(de.name, "..") == 0)
+        continue;
+
+      char subpath[512];
+      memmove(subpath, path, strlen(path));
+      memmove(subpath + strlen(path), de.name, strlen(de.name));
+      find(subpath, filename);
+    }
+  }
+  
 }
 
 int
 main(int argc, char *argv[])
 {
-  if (argc > 3) {
-    printf("using: find dir filename\n");
-    exit(0);
+  //now argc == 1 && argc == 2 not support
+  if (argc == 1) {  //find . all: print all file in this dir or file
+    fprintf(2, "using: find path filename\n");
   }
-
-  find(argv[1], argv[2]);
+  else if (argc == 2) { // find . filename
+    fprintf(2, "using: find path filename\n");
+  }
+  else { // find path filename ***
+    find(argv[1], argv[2]);
+  }
   exit(0);
 }
