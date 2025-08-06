@@ -48,15 +48,21 @@ find(char *path, char *filename)
 
   if (st.type == T_DIR) {
     while (read(fd, &de, sizeof(de)) == sizeof(de)) {
+
       if (de.inum == 0)
         continue;
 
       if (strcmp(de.name, ".") == 0 || strcmp(de.name, "..") == 0)
         continue;
+      fprintf(1, "fname = %s\n", de.name);
 
-      char subpath[512];
+      char subpath[512] = {0};
       memmove(subpath, path, strlen(path));
-      memmove(subpath + strlen(path), de.name, strlen(de.name));
+      fprintf(1, "subpath1 = %s\n", subpath);
+      memmove(subpath + strlen(path), "/", 1);
+      fprintf(1, "subpath2 = %s\n", subpath);
+      memmove(subpath + strlen(path) + 1, de.name, strlen(de.name));
+      fprintf(1, "subpath3 = %s\n", subpath);
       find(subpath, filename);
     }
   }
