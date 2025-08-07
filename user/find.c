@@ -26,6 +26,7 @@ find(char *path, char *filename)
   struct stat st;
   struct dirent de;
 
+
   if ((fd = open(path, 0)) < 0) {
     fprintf(2, "find: cannot open %s\n", path);
     return;
@@ -33,20 +34,20 @@ find(char *path, char *filename)
 
   if (fstat(fd, &st) < 0) {
     fprintf(2, "find: cannot stat %s\n", path);
+    close(fd);
     return;
   }
 
-  char fn[512];
+  char fn[128] = {0};
   getname(path, fn);
   if (strcmp(fn, filename) == 0) {
     fprintf(1, "%s\n", path);
   }
 
   if (st.type == T_FILE) {
-    return;
+    close(fd);
   }
-
-  if (st.type == T_DIR) {
+  else if (st.type == T_DIR) {
     while (read(fd, &de, sizeof(de)) == sizeof(de)) {
 
       if (de.inum == 0)
@@ -54,19 +55,17 @@ find(char *path, char *filename)
 
       if (strcmp(de.name, ".") == 0 || strcmp(de.name, "..") == 0)
         continue;
-      fprintf(1, "fname = %s\n", de.name);
 
-      char subpath[512] = {0};
+      char subpath[128] = {0};
       memmove(subpath, path, strlen(path));
-      fprintf(1, "subpath1 = %s\n", subpath);
       memmove(subpath + strlen(path), "/", 1);
-      fprintf(1, "subpath2 = %s\n", subpath);
       memmove(subpath + strlen(path) + 1, de.name, strlen(de.name));
-      fprintf(1, "subpath3 = %s\n", subpath);
       find(subpath, filename);
     }
+    close(fd);
   }
-  
+
+  return;
 }
 
 int
