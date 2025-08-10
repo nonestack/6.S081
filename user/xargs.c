@@ -9,48 +9,59 @@
 int
 main(int argc, char *argv[])
 {
+
   if (argc >= MAXARG) {
     fprintf(2, "too many parameter\n");
-    exit(0);
+    exit(1);
   }
+  if (argc < 2) {
+    fprintf(2, "using: xargs command parameters ...\n");
+    exit(1);
+  }
+
 
   if (fork() > 0) { // parent
     wait(0);
   }
   else {  // child
-    char params[MAXARG][PARAM_SIZE];
+    
+    char str[PARAM_SIZE];
+    char *arr[MAXARG] = {0};
 
-    char c;
-    char p[PARAM_SIZE] = {0};
+    int ret = 0;
+    char *p = malloc(PARAM_SIZE * sizeof(char));
+    memset(p, 0, PARAM_SIZE);
+    int idx = 0;
     int pidx = 0;
-    int psidx = 0;
-    while (read(1, &c, 1) == 1) {
-      fprintf(1, "%c = %d\n", c, c);
-      if (c != '\n') {
-        p[pidx++] = c;
-      }
-      else {
-        memmove(params[psidx++], p, PARAM_SIZE);
-        memset(p, 0, PARAM_SIZE);
-        pidx = 0;
-      }
-    }
-
-    if (p[0] != 0 && pidx > 0) {
-      memmove(params[psidx++], p, PARAM_SIZE);
-    }
-
+    int sidx = 0;
 
     for (int i = 1; i < argc; ++i) {
-      // p[i - 1] = argv[i];
-      fprintf(1, "p%d = %s\n", i, argv[i]);
+      memmove(p, argv[i], strlen(argv[i]));
+      arr[idx++] = p;
+      p = malloc(PARAM_SIZE * sizeof(char));
+      memset(p, 0, PARAM_SIZE);
+      
+    }
+    
+    while ((ret = read(0, str, PARAM_SIZE)) > 0) {
+
+      for (int i = 0; i < ret; ++i) {
+        if (str[sidx] != '\n') {
+          p[pidx++] = str[sidx++];
+        }
+        else {
+          if (idx >= MAXARG) break;
+          arr[idx++] = p;
+          p = malloc(PARAM_SIZE * sizeof(char));
+          memset(p, 0, PARAM_SIZE);
+          pidx = 0;
+        }
+        
+      }
+      sidx = 0;
     }
 
-    for (int i = 0; i < psidx; ++i) {
-      fprintf(1, "ps%d = %s\n", i, params[i]);
-    }
-    exit(0);
-    
+    exec(argv[1], arr);
   }
 
   exit(0);
