@@ -21,7 +21,7 @@ main(int argc, char *argv[])
     write(p1[1], "h", 1);
     
     read(p2[0], &b, 1);
-    fprintf(1, "%d:received pong\n", getpid());
+    fprintf(1, "%d: received pong\n", getpid());
     
     wait(0);
   }
@@ -31,7 +31,7 @@ main(int argc, char *argv[])
     close(p2[0]);
     
     read(p1[0], &b, 1);
-    fprintf(1, "%d:received ping\n", getpid());
+    fprintf(1, "%d: received ping\n", getpid());
 
     write(p2[1], "w", 1);
 
